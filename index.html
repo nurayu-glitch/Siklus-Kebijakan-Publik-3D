@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Siklus Kebijakan Publik 3D · Cincin Kalosara</title>
+<style>
+:root{--bg:#faf7f2;--fg:#2b2118;--card:#fff;--muted:#6f6254;--line:#e4dccf;--acc:#9a5b1f;--ok:#2e7d4f;--bad:#b3402f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171310;--fg:#f1e9de;--card:#241d17;--muted:#b2a392;--line:#3a3027;--acc:#e0a15a;--ok:#6fcf97;--bad:#ff8a73;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171310;--fg:#f1e9de;--card:#241d17;--muted:#b2a392;--line:#3a3027;--acc:#e0a15a;--ok:#6fcf97;--bad:#ff8a73;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:1.35rem;margin:0 0 4px}
+.sub{color:var(--muted);font-size:.9rem;margin:0 0 12px}
+.grid{display:grid;gap:14px;grid-template-columns:1.1fr 1fr}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+canvas{width:100%;height:420px;display:block;border-radius:10px;touch-action:none;cursor:grab;background:linear-gradient(var(--card),var(--bg))}
+.hint{font-size:.8rem;color:var(--muted);margin:8px 0 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 10px;font-size:.82rem;cursor:pointer}
+.chip.on{border-color:var(--acc);outline:2px solid var(--acc)}
+.chip.done::after{content:" ✓";color:var(--ok)}
+h2{font-size:1.05rem;margin:0 0 6px}
+.btn{display:block;width:100%;text-align:left;margin-top:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}
+.btn:hover{border-color:var(--acc)}
+.btn.main{background:var(--acc);color:#fff;text-align:center;border:0;font-weight:600}
+.fb{margin-top:10px;font-size:.92rem;min-height:1.4em}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+.tag{display:inline-block;font-size:.75rem;color:var(--acc);border:1px solid var(--acc);border-radius:6px;padding:0 6px;margin-bottom:6px}
+.kal{font-size:.85rem;color:var(--muted);border-left:3px solid var(--acc);padding-left:10px;margin-top:12px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Siklus Kebijakan Publik 3D</h1>
+<p class="sub">Mata kuliah Pengantar Kebijakan Publik · Estimasi belajar 15–20 menit · Kasus: sampah plastik di pesisir Kendari</p>
+<div class="grid">
+  <div class="card">
+    <canvas id="cv" aria-label="Cincin 3D lima tahap kebijakan publik"></canvas>
+    <p class="hint">Seret untuk memutar cincin, gulir atau cubit untuk zoom, ketuk bola atau poster 3D untuk memilih tahap. Cincin cokelat terinspirasi Kalosara, simbol adat Tolaki.</p>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="card">
+    <span class="tag" id="tag">Tahap 1 dari 5</span>
+    <h2 id="st"></h2>
+    <div id="sd"></div>
+    <div id="opts"></div>
+    <div class="fb" id="fb"></div>
+    <div class="bar"><i id="pb"></i></div>
+    <div class="hint" id="pt">Keputusan benar: 0 dari 5</div>
+    <div class="kal" id="kal">Kalosara melambangkan persatuan dan penyelesaian masalah lewat musyawarah. Gunakan semangat itu saat memilih keputusan.</div>
+  </div>
+</div>
+<div class="card" style="margin-top:14px">
+  <h2>Latihan tahap kebijakan</h2>
+  <p class="sub">Setiap latihan membahas satu tahap, dan bola 3D tahap tersebut menyala sebagai petunjuk visual.</p>
+  <button class="btn main" id="gen">Mulai latihan</button>
+  <div id="gx" class="hide">
+    <p id="gk" style="margin:12px 0 4px;font-weight:600"></p>
+    <p id="gq" style="margin:0"></p>
+    <div id="go"></div>
+    <div class="fb" id="gf"></div>
+  </div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+var S=[
+{n:"Penyusunan Agenda",d:"Masalah dikenali dan diputuskan layak dibahas pemerintah. Sampah plastik menumpuk di pesisir dan mengganggu nelayan serta wisata.",q:"Apa yang paling tepat agar masalah ini masuk agenda kebijakan?",o:[["Warga dan nelayan menyampaikan masalah lewat musyawarah, didukung data kebersihan pantai",1,"Tepat. Masalah menjadi agenda ketika didukung suara masyarakat dan bukti."],["Menunggu sampai diberitakan media nasional",0,"Kurang tepat. Masalah lokal tidak seharusnya menunggu sorotan luar."]]},
+{n:"Formulasi Kebijakan",d:"Alternatif pemecahan disusun dan dibandingkan.",q:"Langkah apa yang tepat pada tahap ini?",o:[["Langsung memilih larangan plastik tanpa alternatif lain",0,"Kurang tepat. Formulasi menuntut perbandingan beberapa opsi."],["Menyusun alternatif (bank sampah, denda, sarana) lalu menimbang biaya dan manfaatnya",1,"Tepat. Alternatif dibandingkan sebelum dipilih."]]},
+{n:"Adopsi Kebijakan",d:"Salah satu alternatif disahkan menjadi keputusan resmi.",q:"Bagaimana adopsi yang baik?",o:[["Disahkan dalam peraturan daerah setelah musyawarah dengan pemangku kepentingan",1,"Tepat. Legitimasi lahir dari prosedur resmi dan partisipasi."],["Ditetapkan sepihak tanpa konsultasi",0,"Kurang tepat. Tanpa konsultasi, kebijakan rawan ditolak."]]},
+{n:"Implementasi",d:"Kebijakan dijalankan oleh pelaksana di lapangan.",q:"Apa yang paling mendukung implementasi?",o:[["Hanya memasang spanduk larangan",0,"Kurang tepat. Tanpa sarana dan pelibatan, aturan tidak berjalan."],["Sosialisasi, penyediaan tempat sampah, dan pelibatan tokoh adat serta komunitas",1,"Tepat. Sumber daya dan dukungan komunitas menentukan keberhasilan."]]},
+{n:"Evaluasi Kebijakan",d:"Hasil kebijakan dinilai dan dijadikan dasar perbaikan.",q:"Bagaimana evaluasi yang tepat?",o:[["Menganggap berhasil karena peraturan sudah terbit",0,"Kurang tepat. Terbitnya aturan belum berarti masalah teratasi."],["Mengukur tonase sampah dan kepuasan warga, lalu memperbaiki kebijakan",1,"Tepat. Evaluasi memakai indikator dan menghasilkan perbaikan."]]}
+];
+var cur=0,done={},nd=0,hi=-1,posters=[];
+var PC=["#b5532f","#2f6f8f","#6a4a9a","#2e7d4f","#9a7a1f"],PE=["📣","📝","⚖️","🛠️","📊"];
+var PP=[["Masalah dikenali dan diangkat ke agenda","Suara warga dan data jadi dasar","Contoh: sampah plastik mengganggu nelayan"],["Menyusun alternatif pemecahan","Membandingkan biaya dan manfaat","Contoh: bank sampah, denda, tempat sampah"],["Satu alternatif disahkan secara resmi","Melalui peraturan daerah","Musyawarah memberi legitimasi"],["Kebijakan dijalankan di lapangan","Butuh sarana dan sosialisasi","Libatkan tokoh adat dan komunitas"],["Menilai hasil dengan indikator","Ukur tonase sampah dan kepuasan warga","Hasilnya dipakai untuk perbaikan"]];
+function wrap(x,t,xx,y,mw,lh){var w=t.split(" "),l="";for(var k=0;k<w.length;k++){var tt=l+w[k]+" ";if(x.measureText(tt).width>mw&&l){x.fillText(l,xx,y);l=w[k]+" ";y+=lh}else l=tt}x.fillText(l,xx,y);return y+lh}
+function mkTex(i){var c=document.createElement("canvas");c.width=512;c.height=704;var x=c.getContext("2d");var g=x.createLinearGradient(0,0,0,704);g.addColorStop(0,PC[i]);g.addColorStop(1,"#1f1a15");x.fillStyle=g;x.fillRect(0,0,512,704);
+ x.strokeStyle="#e8c48a";x.lineWidth=10;x.strokeRect(18,18,476,668);x.beginPath();x.arc(256,140,68,0,Math.PI*2);x.lineWidth=14;x.strokeStyle="#c98a4b";x.stroke();
+ x.textAlign="center";x.fillStyle="#fff";x.font="62px sans-serif";x.fillText(PE[i],256,162);x.font="bold 28px sans-serif";x.fillStyle="#f5d9a8";x.fillText("TAHAP "+(i+1)+" DARI 5",256,262);
+ x.fillStyle="#fff";x.font="bold 40px sans-serif";var y=wrap(x,S[i].n,256,318,420,46);
+ x.textAlign="left";x.font="26px sans-serif";y+=14;PP[i].forEach(function(p){x.fillStyle="#f5d9a8";x.fillText("•",44,y);x.fillStyle="#fff";y=wrap(x,p,72,y,400,32)+10});
+ x.textAlign="center";x.font="20px sans-serif";x.fillStyle="#e8c48a";x.fillText("Kebijakan Publik · Cincin Kalosara",256,668);return new THREE.CanvasTexture(c)}
+var $=function(i){return document.getElementById(i)};
+function chips(){var c=$("chips");c.textContent="";S.forEach(function(s,i){var b=document.createElement("button");b.className="chip"+(i===cur?" on":"")+(done[i]?" done":"");b.textContent=(i+1)+". "+s.n;b.onclick=function(){pick(i)};c.appendChild(b)})}
+function pick(i){cur=i;var s=S[i];$("tag").textContent="Tahap "+(i+1)+" dari 5";$("st").textContent=s.n;$("sd").textContent=s.d;$("fb").textContent="";$("fb").className="fb";
+ var o=$("opts");o.textContent="";var q=document.createElement("p");q.style.fontWeight="600";q.style.margin="10px 0 0";q.textContent=s.q;o.appendChild(q);
+ s.o.forEach(function(x){var b=document.createElement("button");b.className="btn";b.textContent=x[0];b.onclick=function(){var f=$("fb");f.textContent=x[2];f.className="fb "+(x[1]?"ok":"bad");if(x[1]&&!done[i]){done[i]=1;nd++;prog();if(nd===5){f.textContent=x[2]+" Selesai! Kelima tahap sudah Anda lalui. Seperti Kalosara, siklus kebijakan menyatukan banyak pihak lewat musyawarah."}}chips();paint()};o.appendChild(b)});
+ chips();paint()}
+function prog(){$("pb").style.width=(nd*20)+"%";$("pt").textContent="Keputusan benar: "+nd+" dari 5"}
+var gl=null,nodes=[],grp,ren,cam,scn,dragging=false,moved=0,lx=0,ly=0,t0=0;
+function paint(){nodes.forEach(function(m,i){var c=i===hi?0xf5c542:(i===cur?0xd9822b:(done[i]?0x3fa66b:0x8a97a8));m.material.color.setHex(c);m.material.emissive.setHex(i===hi?0x6b4b00:0x000000)})}
+function init(){var cv=$("cv");try{ren=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true})}catch(e){cv.outerHTML='<p class="hint">3D tidak didukung di perangkat ini. Gunakan tombol tahap di bawah.</p>';return}
+ scn=new THREE.Scene();cam=new THREE.PerspectiveCamera(45,1,.1,50);cam.position.set(0,3.8,7.6);cam.lookAt(0,0,0);
+ scn.add(new THREE.AmbientLight(0xffffff,.7));var dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(3,6,4);scn.add(dl);
+ grp=new THREE.Group();scn.add(grp);
+ var ring=new THREE.Mesh(new THREE.TorusGeometry(2.2,.09,16,90),new THREE.MeshStandardMaterial({color:0x8b5a2b,roughness:.8}));ring.rotation.x=Math.PI/2;grp.add(ring);
+ S.forEach(function(s,i){var a=i/5*Math.PI*2;var m=new THREE.Mesh(new THREE.SphereGeometry(.38,32,24),new THREE.MeshStandardMaterial({color:0x8a97a8,roughness:.4}));m.position.set(Math.cos(a)*2.2,0,Math.sin(a)*2.2);m.userData.i=i;grp.add(m);nodes.push(m);
+  var face=new THREE.MeshBasicMaterial({map:mkTex(i)}),edge=new THREE.MeshStandardMaterial({color:0x3a2a1a});
+  var p=new THREE.Mesh(new THREE.BoxGeometry(1.45,2,.07),[edge,edge,edge,edge,face,face]);p.position.set(Math.cos(a)*2.2,1.5,Math.sin(a)*2.2);p.rotation.y=Math.PI/2-a;p.userData.i=i;grp.add(p);posters.push(p)});
+ function rs(){var w=cv.clientWidth,h=cv.clientHeight;ren.setPixelRatio(Math.min(devicePixelRatio||1,2));ren.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+ rs();addEventListener("resize",rs);
+ cv.addEventListener("pointerdown",function(e){dragging=true;moved=0;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId)});
+ cv.addEventListener("pointermove",function(e){if(!dragging)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);grp.rotation.y+=dx*.01;grp.rotation.x=Math.max(-.9,Math.min(.9,grp.rotation.x+dy*.006))});
+ cv.addEventListener("pointerup",function(e){dragging=false;if(moved<6){var r=cv.getBoundingClientRect();var v=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);var rc=new THREE.Raycaster();rc.setFromCamera(v,cam);var h=rc.intersectObjects(nodes.concat(posters));if(h.length)pick(h[0].object.userData.i)}});
+ cv.addEventListener("wheel",function(e){e.preventDefault();cam.position.z=Math.max(4.5,Math.min(11,cam.position.z+e.deltaY*.005))},{passive:false});
+ (function loop(t){requestAnimationFrame(loop);if(!dragging)grp.rotation.y+=.003;nodes.forEach(function(m,i){var s=(i===cur||i===hi)?1+.1*Math.sin(t/250):1;m.scale.setScalar(s)});posters.forEach(function(p,i){p.scale.setScalar((i===cur||i===hi)?1.07+.03*Math.sin(t/250):1)});ren.render(scn,cam)})(0)}
+var GB=[{kasus:"Pasar tradisional di kota tampak kumuh dan pedagang mengeluh banjir saat hujan.",tahap:0,pertanyaan:"Pada tahap apa masalah ini diputuskan layak dibahas pemerintah?",opsi:["Penyusunan agenda","Evaluasi kebijakan","Implementasi"],benar:0,penjelasan:"Penyusunan agenda adalah tahap ketika masalah dikenali dan diputuskan layak masuk pembahasan pemerintah."},
+{kasus:"Pemerintah daerah membandingkan tiga cara mengatasi parkir liar: juru parkir resmi, kantong parkir, dan penindakan.",tahap:1,pertanyaan:"Tahap apa yang sedang dijalankan?",opsi:["Adopsi kebijakan","Formulasi kebijakan","Penyusunan agenda"],benar:1,penjelasan:"Membandingkan beberapa alternatif pemecahan adalah ciri formulasi kebijakan."},
+{kasus:"Setahun setelah program air bersih berjalan, dinas mengukur jumlah rumah yang terlayani dan menyurvei kepuasan warga.",tahap:4,pertanyaan:"Kegiatan dinas tersebut termasuk tahap apa?",opsi:["Implementasi","Adopsi","Evaluasi kebijakan"],benar:2,penjelasan:"Mengukur hasil dengan indikator dan menjadikannya bahan perbaikan adalah evaluasi kebijakan."}];
+var gi=0;
+$("gen").onclick=function(){var r=GB[gi%GB.length];gi++;$("gx").classList.remove("hide");$("gk").textContent="Kasus: "+r.kasus;$("gq").textContent="Tahap yang dibahas menyala di cincin 3D. "+r.pertanyaan;hi=r.tahap;paint();
+ var o=$("go");o.textContent="";$("gf").textContent="";$("gf").className="fb";
+ r.opsi.forEach(function(x,i){var c=document.createElement("button");c.className="btn";c.textContent=x;c.onclick=function(){var f=$("gf");var ok=i===r.benar;f.textContent=(ok?"Benar. ":"Belum tepat. ")+r.penjelasan;f.className="fb "+(ok?"ok":"bad")};o.appendChild(c)});
+ $("gen").textContent="Latihan berikutnya"};
+init();pick(0);
+</script>
+</body>
+</html>
